@@ -1,0 +1,272 @@
+
+/// @title FizzBuzz
+/// @author @vex_0x
+/// @dev GLHF
+
+////////////////////////////////////////////////////////////////
+//                         INTERFACE                          //
+////////////////////////////////////////////////////////////////
+
+/// @notice Returns the name of the puzzle
+#define function name() view returns (string memory)
+/// @notice Verifies that a solution is valid for the puzzle
+#define function verify(uint256 _start, uint256 _solution) nonpayable returns (bool)
+/// @notice Generates the puzzle's starting position based on a seed.
+#define function generate(address _seed) view returns (uint256)
+
+////////////////////////////////////////////////////////////////
+//                         CONSTANTS                          //
+////////////////////////////////////////////////////////////////
+
+// ...
+
+/// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⢿⣿⣿⣿⣿⣟⠋⣿⣿⣿⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣷⣤⣿⣿⣿⣿⣿⣿⣿⣭⣁⠀⠀⣨⣭⣿⣿⣿⣿⣿⣿⣿⡟⠛⣿⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⣿⣿⣿⣆⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⡿⠿⠟⠉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⣿⣆⠀⢀⣨⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠈⠻⣿⣿⣿⣿⡋⠀⢿⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⣶⣿⣿⣿⣿⣿⣿⣿⣿⣤⣄⡀⠀⠀⢀⣤⣼⣿⣿⣷⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⡟⢻⣿⣿⣿⣿⣿⣿⠿⠿⣿⣿⣿⣿⣆⢠⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⣷⣾⣿⣿⣿⣿⣿⣿⣄⣰⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⠏⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⣿⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠟⠛⠁⠀⢹⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⡿⠀⠀⠈⠉⢉⣿⣿⣿⡿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠙⠿⣿⣿⣿
+/// ⣿⣿⣿⣿⡟⠁⠀⠀⠀⢠⣿⣿⣿⠀⠀⢿⣿⣿⣿⣿⣿⡆⠀⣠⣴⣶⣿⣷⣿⣿
+/// ⣿⣿⣿⣿⣿⣿⣿⣿⣦⣼⣿⣿⣿⣾⣿⣷⣿⣿⣿⣿⣿⣇⣾⣿⣿⡏⢹⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡋⢛⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+/// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+
+// Unique upper nibbles for selectors: [0x00 (name), 0x02 (generate), 0x04 (verify)]
+#define jumptable__packed TABLE = {
+    name generate verify
+}
+
+/// @dev Entry point
+#define macro MAIN() = takes (0) returns (0) {
+    __tablestart(TABLE)         // [table_start]
+    0x00 calldataload 0xfc shr  // [upper_selector_nibble, table_start]
+    dup1 0x04 lt                // [upper_selector_nibble < 0x04, upper_selector_nibble, table_start]
+    fail jumpi                  // [upper_selector_nibble, table_start]
+    add                         // [table_start + index]
+    0x02 swap1                  // [table_start + index, 0x02]
+    0x1E                        // [mem_ptr, table_start + index, 0x02]
+    codecopy                    // []
+    0x00 mload jump             // []
+
+    name:
+        // dev: Returns
+        NAME()
+    generate:
+        // dev: Returns
+        0x04 calldataload       // [_seed]
+        GENERATE()
+    verify:
+        // dev: Returns
+        VERIFY(ret_false)
+    fail:
+        0x00 0x00 revert
+    ret_false:
+        false 0x00 mstore
+        0x20 0x00 return
+}
+
+///       wWWWw               wWWWw
+/// vVVVv (___) wWWWw         (___)  vVVVv
+/// (___)  ~Y~  (___)  vVVVv   ~Y~   (___)
+///  ~Y~   \|    ~Y~   (___)    |/    ~Y~
+///  \|   \ |/   \| /  \~Y~/   \|    \ |/
+/// \\|// \\|// \\|/// \\|//  \\|// \\\|///
+/// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/// @notice Returns the name of the puzzle
+#define macro NAME() = takes (0) returns (0) {
+    0x0846697a7a42757a7a // ["FizzBuzz"]
+    0x28 mstore          // []
+    0x20 0x00 mstore     // []
+    msize 0x00 return    // []
+}
+
+///   _____
+///  |A .  | _____
+///  | /.\ ||A ^  | _____
+///  |(_._)|| / \ ||A _  | _____
+///  |  |  || \ / || ( ) ||A_ _ |
+///  |____V||  .  ||(_'_)||( v )|
+///         |____V||  |  || \ / |
+///                |____V||  .  |
+///                       |____V|
+
+/// @notice Generates the puzzle's starting position based on a seed.
+/// @dev The seed is intended to be `msg.sender` of some wrapper function or
+/// call.
+/// @param _seed The seed to use to generate the puzzle.
+/// @return The puzzle's starting position.
+#define macro GENERATE() = takes (1) returns (0) {
+    // Input:            [_seed]
+
+    0x00 mstore      // []
+    msize 0x00 sha3  // [_start]
+    0x00 mstore      // []
+    msize 0x00 return
+}
+
+/// `-:-.   ,-;"`-:-.   ,-;"`-:-.   ,-;"`-:-.   ,-;"
+///    `=`,'=/     `=`,'=/     `=`,'=/     `=`,'=/
+///      y==/        y==/        y==/        y==/
+///    ,=,-<=`.    ,=,-<=`.    ,=,-<=`.    ,=,-<=`.
+/// ,-'-'   `-=_,-'-'   `-=_,-'-'   `-=_,-'-'   `-=_
+
+/// @notice Verifies that a solution is valid for the puzzle.
+/// @dev `_start` is intended to be an output from {IPuzzle-generate}.
+/// @param _start The puzzle's starting position.
+/// @param _solution The solution to the puzzle.
+/// @return Whether the solution is valid.
+#define macro VERIFY(ret_false) = takes (0) returns (0) {
+    // Input:                      []
+    
+    0x04 calldataload           // [_start]
+    0x24 calldataload           // [_solution, _start]
+    
+    // ----------------------------
+    // PHASE 1: The warm up
+    // ----------------------------
+
+    // NOTE: Have this come back to bite them in the ass later. We're using bitwise and,
+    // so we can have _solution[0x19] & _start[0x12] only share *some* bits, and use
+    // one half of one of these later on.
+
+    dup1 0x19 byte              // [_solution[0x19], _solution, _start]
+    dup1                        // [_solution[0x19], _solution[0x19], _solution, _start]
+    dup4 0x12 byte              // [_start[0x12], _solution[0x19], _solution[0x19], _solution, _start]
+    and                         // [_solution[0x19] & _start[0x12], _solution[0x19], _solution, _start]
+    iszero <ret_false> jumpi    // [_solution[0x19], _solution, _start]
+
+    0x0F and                    // [_solution[0x19], _solution, _start]
+    pc 0x04 shr eq              // [pc >> 0x04 == _start[0x1F] & 0x0F, _solution, _start]
+    iszero <ret_false> jumpi    // [_solution, _start]
+    
+    // ----------------------------
+    // PHASE 2: Heating up
+    // ----------------------------
+
+    dup1 0x80 shr 0x80 shl      // [instructions, _solution, _start]
+    VM(<ret_false>)             // [_solution, _start]
+
+    // ----------------------------
+    // PHASE 3: The big finish
+    // ----------------------------
+
+    true 0x00 mstore
+    0x20 0x00 return
+}
+
+///                 __
+///                / _\ #
+///                \c /  #
+///                / \___ #
+///                \`----`#==>  
+///                |  \  #
+///     ,%.-"""---'`--'\#_
+///    %%/             |__`\
+///   .%'\     |   \   /  //
+///   ,%' >   .'----\ |  [/
+///      < <<`       ||
+///       `\\\       ||
+///         )\\      )\
+/// ^^^^^^^^"""^^^^^^""^^^^^^^^^^
+
+#define jumptable__packed VM_INSTRUCTIONS {
+    muldiv bitand opshr opshl opadd
+}
+
+#define macro VM(ret_false) = takes (3) returns (0) {
+    // Input: [instructions]
+
+    0x00                               // [result, instructions]
+    loop:
+        __tablestart(VM_INSTRUCTIONS)  // [table_start, result, instructions]
+        dup3 0x00 byte                 // [opcode, table_start, result, instructions]
+        dup1 0xFF eq continue jumpi    // [opcode, table_start, result, instructions]
+        dup1 0x04 lt <ret_false> jumpi // [opcode, table_start, result, instructions]
+
+        0x01 shl                       // [opcode << 1, table_start, result, instructions]
+        add                            // [table_start + (opcode << 1), result, instructions]
+        0x02 swap1                     // [table_start + (opcode << 1), 0x02, result, instructions]
+        0x1E                           // [mem_ptr, table_start + index, 0x02, result, instructions]
+        codecopy                       // [result, instructions]
+        swap1                          // [instructions, result]
+        0x00 mload jump                // [instructions, result]
+        VM_DISPATCH()                  // [result, instructions]
+        loop jump
+
+    continue:
+        // After loop:                    [opcode, table_start, result, instructions]
+        pop pop                        // [result, instructions]
+        0xc0ffee eq iszero             // [result != 0xc0ffee, instructions]
+        <ret_false> jumpi              // [instructions]
+        pop                            // []
+}
+
+#define macro VM_DISPATCH() = takes (1) returns (2) {
+    // Input:  [result, instructions]
+    muldiv:
+        dup1 0x03 byte // [d, instructions]
+        dup2 0x02 byte // [b, d, instructions]
+        dup3 0x01 byte // [a, b, d, instructions]
+
+        mul            // [a * b, instructions]
+        div            // [a * b / d, instructions]
+ 
+        // Advance
+        swap1          // [instructions, a * b / d]
+        0x20 shl       // [instructions << 0x20, a * b / d]
+        swap1          // [a * b / d, instructions]
+
+        done jump
+    bitand:
+        dup1 0x01 byte // [a, instructions]
+        dup2 0x02 byte // [b, a, instructions]
+        and            // [a & b, instructions]
+
+        // Advance
+        swap1    // [instructions, a & b]
+        0x18 shl // [instructions << 0x18, a & b]
+        swap1    // [a & b, instructions]
+
+        done jump
+    opshr:
+        dup1 0x01 byte // [a, instructions]
+        dup2 0x02 byte // [b, a, instructions]
+        shr            // [a >> b, instructions]
+
+        // Advance
+        swap1          // [instructions, a >> b]
+        0x18 shl       // [instructions << 0x18, a >> b]
+        swap1          // [a >> b, instructions]
+
+        done jump
+    opshl:
+        dup1 0x01 byte // [a, instructions]
+        dup2 0x02 byte // [b, a, instructions]
+        shl            // [a << b]
+
+        // Advance
+        swap1    // [instructions, a << b]
+        0x18 shl // [instructions << 0x18, a << b]
+        swap1    // [a << b, instructions]
+
+        done jump
+    opadd:
+        dup1 0x02 byte // [b, instructions]
+        dup2 0x01 byte // [a, b, instructions]
+        0x01 sub // [a - 1, b, instructions]
+        add      // [a + b - 1, instructions]
+
+        // Advance
+        swap1    // [instructions, a + b - 1]
+        0x18 shl // [instructions << 0x18, a + b - 1]
+        swap1    // [a + b - 1, instructions]
+    done:
+        swap1 swap2 add
+        // Exit: [result, instructions]
+}
