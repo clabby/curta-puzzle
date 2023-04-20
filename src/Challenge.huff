@@ -1,7 +1,8 @@
-
-/// @title FizzBuzz
+/// @title Antikythera
 /// @author @vex_0x
 /// @dev GLHF
+
+#include "huffmate/utils/Shuffling.huff"
 
 ////////////////////////////////////////////////////////////////
 //                         INTERFACE                          //
@@ -13,12 +14,6 @@
 #define function verify(uint256 _start, uint256 _solution) nonpayable returns (bool)
 /// @notice Generates the puzzle's starting position based on a seed.
 #define function generate(address _seed) view returns (uint256)
-
-////////////////////////////////////////////////////////////////
-//                         CONSTANTS                          //
-////////////////////////////////////////////////////////////////
-
-// ...
 
 /// ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 /// ⣿⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⢿⣿⣿⣿⣿⣟⠋⣿⣿⣿⣿⣿⣿⣿⣿⣿
@@ -80,10 +75,10 @@
 
 /// @notice Returns the name of the puzzle
 #define macro NAME() = takes (0) returns (0) {
-    0x0846697a7a42757a7a // ["FizzBuzz"]
-    0x28 mstore          // []
-    0x20 0x00 mstore     // []
-    msize 0x00 return    // []
+    0x0B416E74696B797468657261 // ["Antikythera"]
+    0x2B mstore                // []
+    0x20 0x00 mstore           // []
+    msize 0x00 return          // []
 }
 
 ///   _____
@@ -105,9 +100,10 @@
     // Input:            [_seed]
 
     0x00 mstore      // []
+    gas 0x20 mstore  // []
     msize 0x00 sha3  // [_start]
     0x00 mstore      // []
-    msize 0x00 return
+    0x20 0x00 return
 }
 
 /// `-:-.   ,-;"`-:-.   ,-;"`-:-.   ,-;"`-:-.   ,-;"
@@ -131,17 +127,13 @@
     // PHASE 1: The warm up
     // ----------------------------
 
-    // NOTE: Have this come back to bite them in the ass later. We're using bitwise and,
-    // so we can have _solution[0x19] & _start[0x12] only share *some* bits, and use
-    // one half of one of these later on.
+    dup1 0x10 byte              // [_solution[0x10], _solution, _start]
+    dup1                        // [_solution[0x10], _solution[0x10], _solution, _start]
+    dup4 0x12 byte              // [_start[0x12], _solution[0x10], _solution[0x10], _solution, _start]
+    and                         // [_solution[0x10] & _start[0x10], _solution[0x10], _solution, _start]
+    iszero <ret_false> jumpi    // [_solution[0x10], _solution, _start]
 
-    dup1 0x19 byte              // [_solution[0x19], _solution, _start]
-    dup1                        // [_solution[0x19], _solution[0x19], _solution, _start]
-    dup4 0x12 byte              // [_start[0x12], _solution[0x19], _solution[0x19], _solution, _start]
-    and                         // [_solution[0x19] & _start[0x12], _solution[0x19], _solution, _start]
-    iszero <ret_false> jumpi    // [_solution[0x19], _solution, _start]
-
-    0x0F and                    // [_solution[0x19], _solution, _start]
+    0x0F and                    // [_solution[0x10], _solution, _start]
     pc 0x04 shr eq              // [pc >> 0x04 == _start[0x1F] & 0x0F, _solution, _start]
     iszero <ret_false> jumpi    // [_solution, _start]
     
@@ -153,11 +145,37 @@
     VM(<ret_false>)             // [_solution, _start]
 
     // ----------------------------
-    // PHASE 3: The big finish
+    // PHASE 3: Getting there
     // ----------------------------
 
-    true 0x00 mstore
-    0x20 0x00 return
+    dup2 0x00 mstore            // [_solution, _start]
+    dup1 0x1E byte              // [_solution[0x1E], _solution, _start]
+    0x05 0x00 dup5              // [seed, index, index_count, iters, _solution[0x1E], _solution, _start]
+    MECHS__ONE_WAY_SHUFFLE(0x00, 0x20)
+    pop                         // []
+
+    0x00 mload                  // [shuffled]
+    0x0F and 0x0F eq            // [shuffled & 0x0f == 0x0f]
+    iszero <ret_false> jumpi
+    
+    // ----------------------------
+    // PHASE 4: The final stretch
+    // ----------------------------
+
+    dup1 0x10 byte              // [_solution[0x10], _solution, _start]
+    0x04 shr                    // [_solution[0x10] >> 0x04, _solution, _start]
+    dup1 0x02 gt                // [_solution[0x10] >> 0x04 < 0x02, _solution[0x10], _solution, _start]
+    <ret_false> jumpi           // [_solution[0x10], _solution, _start]
+    gas mod                     // [gas % _solution[0x10] >> 0x04, _solution, _start]
+    <ret_false> jumpi           // [_solution, _start]
+
+    // ----------------------------
+    // Finish Line
+    // ----------------------------
+
+    dup1 0x1F byte              // [_solution[0x1F], _solution, _start]
+    0x00 mstore                 // [_solution, _start]
+    0x20 0x00 return            // []
 }
 
 ///                 __
@@ -202,7 +220,7 @@
     continue:
         // After loop:                    [opcode, table_start, result, instructions]
         pop pop                        // [result, instructions]
-        0xc0ffee eq iszero             // [result != 0xc0ffee, instructions]
+        dup4 0xffffff and eq iszero    // [result != 0xc0ffee, instructions]
         <ret_false> jumpi              // [instructions]
         pop                            // []
 }
