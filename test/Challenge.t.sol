@@ -49,7 +49,7 @@ contract ChallengeTest is Test {
         uint256 mask = 0xFF << offset(0x10);
         solution &= ~mask;
         // Note: We're storing 0010 in the upper bits because `gas` is divisible cleanly by 2 in phase 4.
-        // 0110 in the lower bits because it shares set bits with PC in phase 1b's lower bits. 
+        // 0110 in the lower bits because it shares set bits with PC in phase 1b's lower bits.
         solution |= (0x26 << offset(0x10));
 
         // Phase 2
@@ -64,11 +64,11 @@ contract ChallengeTest is Test {
         // Phase 3
         // 0x3a iterations to get 1111 in the lowest 4 bits of our shuffled starting position.
         solution |= 0x3a00;
-        
+
         // Final
         // Set the bool that is returned.
         solution |= 0x01;
-     
+
         // Verify that the solution is correct.
         emit log_string(string.concat("solution: ", vm.toString(bytes32(solution))));
         assertTrue(puzzle.verify(start, solution));

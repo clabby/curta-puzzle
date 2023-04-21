@@ -1,16 +1,16 @@
-name: test
+name: Foundry
 
-on: workflow_dispatch
+on: push
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  check:
+  test:
     strategy:
       fail-fast: true
 
-    name: Foundry project
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,6 +19,11 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Huff
+        uses: huff-language/huff-toolchain@v2
         with:
           version: nightly
 
@@ -32,3 +37,23 @@ jobs:
         run: |
           forge test -vvv
         id: test
+  lint:
+    strategy:
+      fail-fast: true
+
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge fmt
+        run: |
+          forge fmt --check
+        id: lint
