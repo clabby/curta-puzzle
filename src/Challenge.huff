@@ -244,7 +244,7 @@
     continue:
         // After loop:                    [opcode, table_start, result, instructions]
         pop pop                        // [result, instructions]
-        dup4 0xffffff and eq iszero    // [result != 0xc0ffee, instructions]
+        dup4 0xFFFFFF and eq iszero    // [result != 0xc0ffee, instructions]
         <ret_false> jumpi              // [instructions]
         pop                            // []
 }
