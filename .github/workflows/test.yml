@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          forge test -vvv --fork-url https://rpc.ankr.com/eth
         id: test
   lint:
     strategy:

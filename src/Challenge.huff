@@ -124,7 +124,7 @@
     0x24 calldataload           // [_solution, _start]
     
     // ----------------------------
-    // PHASE 1: The warm up
+    // PHASE 1: Dirty Bits
     // ----------------------------
 
     dup1 0x10 byte              // [_solution[0x10], _solution, _start]
@@ -138,14 +138,14 @@
     iszero <ret_false> jumpi    // [_solution, _start]
     
     // ----------------------------
-    // PHASE 2: Heating up
+    // PHASE 2: V8 Engine
     // ----------------------------
 
     dup1 0x80 shr 0x80 shl      // [instructions, _solution, _start]
     VM(<ret_false>)             // [_solution, _start]
 
     // ----------------------------
-    // PHASE 3: Getting there
+    // PHASE 3: Truffle Shuffle
     // ----------------------------
 
     dup2 0x00 mstore            // [_solution, _start]
@@ -159,7 +159,7 @@
     iszero <ret_false> jumpi
     
     // ----------------------------
-    // PHASE 4: The final stretch
+    // PHASE 4: Budget Cuts
     // ----------------------------
 
     dup1 0x10 byte              // [_solution[0x10], _solution, _start]
@@ -168,6 +168,30 @@
     <ret_false> jumpi           // [_solution[0x10], _solution, _start]
     gas mod                     // [gas % _solution[0x10] >> 0x04, _solution, _start]
     <ret_false> jumpi           // [_solution, _start]
+
+    // ----------------------------
+    // PHASE 5: >_ sudo su
+    // ----------------------------
+
+    dup1 0x0a byte              // [_solution[0x0a], _solution, _start]
+    0x05 shl                    // [_solution[0x0a] << 0x05, _solution, _start]
+    0x14 add                    // [_solution[0x0a] + 0x20, _solution, _start]
+    mload                       // [_solution[_solution[0x0a] + 0x20], _solution, _start]
+    0xFF eq                     // [_solution[_solution[0x0a] + 0x20] == 0xFF, _solution, _start]
+    iszero <ret_false> jumpi    // [_solution, _start]
+
+    // ----------------------------
+    // PHASE 6: 31303532
+    // ----------------------------
+
+    dup1 0xFFFF 0x58 shl and    // [_solution[0x14:0x16], _solution, _start]
+    0x58 shr                    // [_solution[0x14:0x16] >> 0x58, _solution, _start]
+    extcodehash                 // [codehash(_solution[0x14:0x16]), _solution, _start]
+    dup2 0x17 byte              // [_solution[0x17], codehash(_solution[0x14:0x16]), _solution, _start]
+    shl                         // [codehash(_solution[0x14:0x16]) << _solution[0x17], _solution, _start]
+    0xFFFFF and                 // [(codehash(_solution[0x14:0x16]) << _solution[0x17]) & 0xFFFFF, _solution, _start]
+    0x80000 eq                  // [(codehash(_solution[0x14:0x16]) << _solution[0x17]) & 0xFFFFF == 0x80000, _solution, _start]
+    iszero <ret_false> jumpi    // [_solution, _start]
 
     // ----------------------------
     // Finish Line
@@ -207,7 +231,7 @@
         dup1 0xFF eq continue jumpi    // [opcode, table_start, result, instructions]
         dup1 0x04 lt <ret_false> jumpi // [opcode, table_start, result, instructions]
 
-        0x01 shl                       // [opcode << 1, table_start, result, instructions]
+        chainid shl                    // [opcode << 1, table_start, result, instructions]
         add                            // [table_start + (opcode << 1), result, instructions]
         0x02 swap1                     // [table_start + (opcode << 1), 0x02, result, instructions]
         0x1E                           // [mem_ptr, table_start + index, 0x02, result, instructions]
@@ -228,62 +252,70 @@
 #define macro VM_DISPATCH() = takes (1) returns (2) {
     // Input:  [instructions, result]
     muldiv:
-        dup1 0x03 byte // [d, instructions]
-        dup2 0x02 byte // [b, d, instructions]
-        dup3 0x01 byte // [a, b, d, instructions]
+        dup1 0x03 byte    // [d, instructions]
+        dup2 0x02 byte    // [b, d, instructions]
+        dup3 chainid byte // [a, b, d, instructions]
 
-        mul            // [a * b, instructions]
-        div            // [a * b / d, instructions]
+        mul               // [a * b, instructions]
+        div               // [a * b / d, instructions]
  
         // Advance
-        swap1          // [instructions, a * b / d]
-        0x20 shl       // [instructions << 0x20, a * b / d]
-        swap1          // [a * b / d, instructions]
+        swap1             // [instructions, a * b / d]
+        0x20 shl          // [instructions << 0x20, a * b / d]
+        swap1             // [a * b / d, instructions]
 
         done jump
     bitand:
-        dup1 0x01 byte // [a, instructions]
-        dup2 0x02 byte // [b, a, instructions]
-        and            // [a & b, instructions]
+        dup1 chainid byte // [a, instructions]
+        dup2 0x02 byte    // [b, a, instructions]
+        and               // [a & b, instructions]
 
         // Advance
-        swap1    // [instructions, a & b]
-        0x18 shl // [instructions << 0x18, a & b]
-        swap1    // [a & b, instructions]
+        swap1             // [instructions, a & b]
+        0x18 shl          // [instructions << 0x18, a & b]
+        swap1             // [a & b, instructions]
 
         done jump
     opshr:
-        dup1 0x01 byte // [a, instructions]
-        dup2 0x02 byte // [b, a, instructions]
-        shr            // [a >> b, instructions]
+        dup1 chainid byte // [a, instructions]
+        dup2 0x02 byte    // [b, a, instructions]
+        shr               // [a >> b, instructions]
 
         // Advance
-        swap1          // [instructions, a >> b]
-        0x18 shl       // [instructions << 0x18, a >> b]
-        swap1          // [a >> b, instructions]
+        swap1             // [instructions, a >> b]
+        0x18 shl          // [instructions << 0x18, a >> b]
+        swap1             // [a >> b, instructions]
 
         done jump
     opshl:
-        dup1 0x01 byte // [a, instructions]
-        dup2 0x02 byte // [b, a, instructions]
-        shl            // [a << b]
+        dup1 chainid byte // [a, instructions]
+        dup2 0x02 byte    // [b, a, instructions]
+        shl               // [a << b]
 
         // Advance
-        swap1    // [instructions, a << b]
-        0x18 shl // [instructions << 0x18, a << b]
-        swap1    // [a << b, instructions]
+        swap1             // [instructions, a << b]
+        0x18 shl          // [instructions << 0x18, a << b]
+        swap1             // [a << b, instructions]
 
         done jump
     opadd:
-        dup1 0x02 byte // [b, instructions]
-        dup2 0x01 byte // [a, b, instructions]
-        0x01 sub // [a - 1, b, instructions]
-        add      // [a + b - 1, instructions]
+        dup1 chainid byte // [a, instructions]
+        dup1              // [a, a, instructions]
+        dup3 0x02 byte    // [b, a, a, instructions]
+        swap1             // [a, b, a, instructions]
+        chainid swap1 sub // [a - 1, b, a, instructions]
+        add               // [a - 1 + b, a, instructions]
+
+        swap1             // [a, a + b - 1, instructions]
+        0x05 shl          // [a * 32, a + b - 1, instructions]
+        0x14 add          // [a * 32 + 0x14, a + b - 1, instructions]
+        0xFF swap1        // [a * 32 + 0x14, 0xFF, a + b - 1, instructions]
+        mstore            // [a + b - 1, instructions]
 
         // Advance
-        swap1    // [instructions, a + b - 1]
-        0x18 shl // [instructions << 0x18, a + b - 1]
-        swap1    // [a + b - 1, instructions]
+        swap1             // [instructions, a + b - 1]
+        0x18 shl          // [instructions << 0x18, a + b - 1]
+        swap1             // [a + b - 1, instructions]
     done:
         swap1 swap2 add
         // Exit: [result, instructions]

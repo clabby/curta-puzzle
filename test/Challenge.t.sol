@@ -4,7 +4,7 @@ import { Test } from "forge-std/Test.sol";
 import { IPuzzle } from "src/IPuzzle.sol";
 
 contract ChallengeTest is Test {
-    address constant ZERO_COOL = address(0xdeadc0de);
+    address constant ZERO_COOL = address(0xA41FD464c84B5AfcfA9fe58545564d49EC04c1D3);
 
     IPuzzle puzzle;
 
@@ -50,20 +50,24 @@ contract ChallengeTest is Test {
         solution &= ~mask;
         // Note: We're storing 0010 in the upper bits because `gas` is divisible cleanly by 2 in phase 4.
         // 0110 in the lower bits because it shares set bits with PC in phase 1b's lower bits.
-        solution |= (0x26 << offset(0x10));
+        solution |= (0x36 << offset(0x10));
 
-        // Phase 2
+        // Phase 2 & Phase 5
         // In our VM, the easiest way to get a 3 byte number with the constraints is to just
         // shift 3 numbers.
-        uint256 bytecode = 0x030010030008030000FF00000000000000000000000000000000000000000000;
+        uint256 bytecode = 0x030010030008030000040200FF00000000000000000000000000000000000000;
         bytecode |= ((start & 0xFF0000) >> 0x10) << offset(0x01);
         bytecode |= ((start & 0xFF00) >> 0x08) << offset(0x04);
-        bytecode |= (start & 0xFF) << offset(0x07);
+        bytecode |= ((start & 0xFF) - 1) << offset(0x07);
         solution |= bytecode;
 
         // Phase 3
-        // 0x3a iterations to get 1111 in the lowest 4 bits of our shuffled starting position.
-        solution |= 0x3a00;
+        // 0x03 iterations to get 1111 in the lowest 4 bits of our shuffled starting position.
+        solution |= 0x0300;
+
+        // Phase 6
+        solution |= 0xdead << offset(0x14);
+        solution |= 0x0f << offset(0x17);
 
         // Final
         // Set the bool that is returned.
